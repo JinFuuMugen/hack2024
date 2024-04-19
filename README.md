@@ -1,93 +1,57 @@
-# rtl2024
+# AXI4-Lite Interconnect
 
+AXI4-Lite Interconnect — это интерконнект, основанный на стандарте AXI4-Lite.
+Проект написан для хакатона SoC Design Challenge 2024 года трека RTL и RTL PRO.
+Референсный дизайн интерконнекта спроектирован в упрощенном варианте с добавленным приоритетом транзакций.
 
+![readme_interconnect_schem](/doc/img/readme_interconnect_schem.drawio.svg)
 
-## Getting started
+## Основные характеристики
+- Основан на стандарте AXI4-Lite. Подробнее о семействае стандартов в [этом документе](./doc/AXI.md).
+- Тестовая конфигурация 20 master и 12 slave.
+- Добавлены сигналы ar_qos и aw_qos для указания приоритета транзакций.
+- Настроенное окружение под верификацию.
+- Написан на SystemVerilog с использованием интерфейсов. Об интерфейсах можно [прочитать тут](./doc/interfaces.md#interface).
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+## Содержимое репозитория
+|Директория             |Описание                                                             |
+|-----------------------|---------------------------------------------------------------------|
+|doc                    |Документация на проект                                               |
+|rtl                    |Исходные коды ядра интерконнекта                                     |
+|dv                     |Верификационное окружение                                            |
+|scripts                |Скрипты для создания проекта в Vivado                                |
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+## Задание
 
-## Add your files
+В задании вам необходимо оптимизировать микроархитектуру предложенного интерконнекта по критериям максимальной тактовой частоты, площади, средней задержки и пропускной способности. Формулы расчета и учета результатов участников описаны в [правилах](./doc/RTL_rules.md).
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
+Предлагаемый интерконнект основан на стандарте AXI4-Lite, но имеет существенное отличие: для каждой транзакции, независимо от того, с какого master она сформирована, выставляется приоритет с точки зрения арбитража. За передачу приоритетов отвечает сигнал `ar_qos` для чтения и сигнал `aw_qos` записи. Чем больше значение в этом поле, тем более приоритетна транзакция при арбитраже для доступа к slave.
 
-```
-cd existing_repo
-git remote add origin http://gitlab.soc-design-challenge.ru/RTL_PRO/rtl2024.git
-git branch -M main
-git push -uf origin main
-```
+Учет приоритетов транзакций заложен в критерии оценивания и отражает уникальность задания, которое предстоит решить участникам.
 
-## Integrate with your tools
+В реализуемой конфигурации интерконнект использует 20 портов для master и 12 портов для slave. Референсная реализация, будучи функционально рабочей, не обеспечивает оптимальную реализацию даже без учета приоритета транзакций. Не будет ошибкой сказать, что это очень плохая реализация, которую необходимо улучшать и дорабатывать. Если совсем непонятно, о чем идет речь, то настоятельно рекомендуется ознакомиться с [документом, поясняющим базовое устройство, назначение и принцип работы интерконнекта](./doc/Interconnect.md).
 
-- [ ] [Set up project integrations](http://gitlab.soc-design-challenge.ru/RTL_PRO/rtl2024/-/settings/integrations)
+Обратите внимание на весовые коэффициенты при расчете итогового балла в правилах соревнования. Они отражают важность критериев с точки зрения итоговой оценки и являются субъективным отражением видения организаторов на то, каким должен быть финальный результат.
 
-## Collaborate with your team
+На рисунке ниже показан **пример** транзакций **чтения**, когда сразу **три ведущих устройства** одновременно обращаются **к одному и тому же ведомому устройству**. `Slave` обрабатывает приходящие данные и выставляет считанные данные согласно заданному приоритету (`ARQOS`). 
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
+![readme_wave](/doc/img/readme_wave.drawio.svg)
 
-## Test and Deploy
+## Работа с проектом
 
-Use the built-in continuous integration in GitLab.
+Нюансы выполнения описанных ниже пунктов можно узнать в документации, доступной в репозитории.
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+В данном разделе описаны те возможности и шаги, которые вам надо предпринять, чтобы проверить правильность функционирования вашего решения и оценить полученные характеристики.
 
-***
+Если вы внесли изменение в проект и решили, что они верные, то вам необходимо провести следующие действия:
 
-# Editing this README
+- Запустите верификацию вашего решения с использованием предоставленного окружения в виртуальной машине и узнайте текущие значения метрик. Вы можете узнать, как это сделать, в [соответствующей документации](./doc/Questa_How_To.md). Проверьте, что проект прошел тест без ошибок. Если нашли ошибки, то вернитесь к исправлению кода. Кроме того, при запуске верификационного окружения можно проверить, как обрабатываются пакеты с различным приоритетом, проанализировав временную диаграмму и логи симуляции.
+- Сделайте commit со своим решением в репозиторий и запустите проверку закрытого теста через CI. Подробнее об этом [тут](./doc/CI.md) Получите метрики по задержке и пропускной способности. Для подробной информации по работе с gitlab-ом рекомендуется ознакомиться со [следующим материалом](./doc/git_manual.md). 
+- Запустите имплементацию проекта в Vivado через скрипт или GUI. Настоятельно рекомендуется [ознакомиться с материалом по работе со скриптами](./doc/scripts.md) перед попыткой запуска чего-либо. Проверьте, что синтез прошел без ошибок. Получите результаты по частоте и площади. При возникновении вопросов в процессе работы в графической оболочке Vivado, рекомендуется ознакомиться с [соответсвующим материалом](./doc/vivado_manual.md).
+- Проверьте, что полученный netlist после синтеза в Vivado проходит тест. Если тест не пройдет после синтеза, значит RTL описание проекта содержит ошибки или синтезируемые конструкции. Изучайте предупреждения в Vivado, чтобы найти проблемы. Важно! Результат решения, не проходящий тест после синтеза, не принимается к оцениванию.
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+ Отметим, что не обязательно выполнять эти шаги строго последовательно, некоторые из них можно делать параллельно.
 
-## Suggestions for a good README
+Если у вас возникают проблемы с выполнением какого-то из этапов, задайте вопрос организаторам. Вам помогут.
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
-
-## Name
-Choose a self-explaining name for your project.
-
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
-
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
-
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
-
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
-
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
-
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
-
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
-
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
-
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+Удачи в решении задачи! У вас все получится!
