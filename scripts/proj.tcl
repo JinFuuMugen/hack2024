@@ -15,7 +15,7 @@ set IF_PATH        $SRC_PATH/if
 
 #========================================================================== src files
 set IF_FILES       [glob -directory $IF_PATH "*.*v"]
-set SRC_FILES      [glob -directory $SRC_PATH "*.*v"]
+set SRC_FILES      [glob -directory $SRC_PATH "*.*v*"]
 set WRAPPER        $SF_PATH/$TOP_NAME.sv
 set CONSTRAINTS    $SF_PATH/constr.xdc
 #========================================================================== src files : end
