@@ -56,7 +56,7 @@
 
 Для организации совместной работы в рамках команд на хакатоне доступен сервер GitLab.
 
-Перейдите [по ссылке](https://gitlab.hack2024.borisblade.ru).
+Перейдите [по ссылке](https://gitlab.soc-design-challenge.ru/).
 
 ![Alt text](./img/image-8.png)
 
