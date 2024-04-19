@@ -581,6 +581,7 @@ class axi4_liteic_test_base extends uvm_test;
     
     virtual task seq_timeout();
         // We expect at least 1 master
+        master_configs[0].wait_for_reset();
         repeat(test_config.seq_timeout_clks)
             master_configs[0].wait_for_clock();
         `uvm_fatal(get_name(), "Sequence timeout!");
@@ -590,6 +591,7 @@ class axi4_liteic_test_base extends uvm_test;
     
     virtual task test_timeout();
         // We expect at least 1 master
+        master_configs[0].wait_for_reset();
         repeat(test_config.test_timeout_clks)
             master_configs[0].wait_for_clock();
         `uvm_fatal(get_name(), "Test timeout!");
