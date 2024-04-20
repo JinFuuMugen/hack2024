@@ -221,23 +221,41 @@ end
 
 logic [32-1:0] mask [5-1:0];
 logic [31 : 0] qos_sum;
-logic [19 : 0] tmp_or;
-for (genvar i = 0; i < 32; i = i + 1) begin
-    for(genvar j = 0; j < NODE_NUM_MASTER_SLOTS; j = j + 1) begin
-        assign tmp_or[j] = node_arqos_shift[j][i];
-        assign mask[i][j] = (j >> i) & 1;
+logic [31 : 0] tmp_or;
+logic tmp_or_bit;
+
+always_comb begin
+    for (int i = 0; i < 32; i++) begin
+        tmp_or_bit = 1'b0;
+        for (int j = 0; j < NODE_NUM_MASTER_SLOTS; j++) begin
+            tmp_or_bit = tmp_or_bit | node_arqos_shift[j][i];
+        end
+        tmp_or[i] = |tmp_or_bit;
     end
-    assign qos_sum[i] =  |tmp_or;
 end
 
+//for (genvar i = 0; i < 32; i = i + 1) begin
+//    for(genvar j = 0; j < NODE_NUM_MASTER_SLOTS; j = j + 1) begin
+//        assign tmp_or_bit[j][i] = node_arqos_shift[j][i];
+//    end
+//    assign tmp_or[i] = |tmp_or_bit[i];
+//end
+
+for (genvar i = 0; i < 5; i = i + 1) begin
+    for(genvar j = 0; j < 32; j = j + 1) begin
+        assign mask[i][j] = (j >> i) & 1;
+    end
+end
+
+assign qos_sum =  tmp_or;
 
 logic [31:0] one_shot_catch;
 
-
-for(genvar i = 0; i < NODE_NUM_MASTER_SLOTS; i = i + 1) begin    
-    assign mst_id_reqst_prior_onehot = (node_arqos_shift[i] == one_shot_catch)? (1 << i) : 0;
+always_comb begin
+    for(int i = 0; i < NODE_NUM_MASTER_SLOTS; i = i + 1) begin    
+        mst_id_reqst_prior_onehot = (node_arqos_shift[i] == one_shot_catch)? (1 << i) : 0;
+    end
 end
-
 for(genvar i = 0; i < NODE_NUM_MASTER_SLOTS; i = i + 1) begin    
     assign mst_id_reqst_prior[i] = |(one_shot_catch & mask[i]);
 end
