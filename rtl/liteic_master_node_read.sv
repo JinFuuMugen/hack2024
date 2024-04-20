@@ -20,7 +20,8 @@ module liteic_master_node_read
 
     input  logic [ IC_RDATA_WIDTH-1     : 0 ] cbar_resp_data_i [ IC_NUM_SLAVE_SLOTS ],
     input  logic [ IC_NUM_SLAVE_SLOTS-1 : 0 ] cbar_resp_val_i,
-    output logic [ IC_NUM_SLAVE_SLOTS-1 : 0 ] cbar_resp_rdy_o
+    output logic [ IC_NUM_SLAVE_SLOTS-1 : 0 ] cbar_resp_rdy_o,
+    output logic [3:0]                        cbar_reqst_arqos_o
 );
 
 
@@ -86,10 +87,15 @@ logic [ IC_RDATA_WIDTH-1       : 0 ] node_rdata_w [ NODE_NUM_SLAVE_SLOTS ];
 logic [ NODE_NUM_SLAVE_SLOTS-1 : 0 ] node_rvalid_w;
 logic [ NODE_NUM_SLAVE_SLOTS-1 : 0 ] node_rready_w;
 
+logic [ 3       : 0 ]                node_rqos_w;
+
 // ADDR of slave from decoder
 logic [ IC_ARADDR_WIDTH-1       : 0 ] slv_araddr_wi;
 logic [ NODE_NUM_SLAVE_SLOTS-1  : 0 ] slv_id_reqst_onehot;
 logic [ NODE_NUM_SLAVE_SLOTS-1  : 0 ] slv_id_reqst_onehot_r;
+
+//ARQOS to slave
+logic [ 3 : 0 ] node_arqos_w;
 
 // Flags
 logic                                 illegal_addr;
@@ -108,6 +114,8 @@ logic                               mst_arvalid_wi;
 logic [ IC_ARADDR_WIDTH-1     : 0 ] mst_araddr_wi;
 logic                               mst_arready_wo;
 
+logic [3:0]                         mst_arqos_wi;
+
 //-------------------------------------------------------------------------------
 // = Reconnect and combine interfaces
 //-------------------------------------------------------------------------------
@@ -116,11 +124,16 @@ assign mst_axil.ar_ready = mst_arready_wo;
 assign mst_arvalid_wi    = mst_axil.ar_valid;
 assign mst_araddr_wi     = mst_axil.ar_addr;
 
+assign mst_arqos_wi      =  mst_axil.ar_qos;
+
 assign {mst_axil.r_data, mst_axil.r_resp} = mst_rdata_wo;
 assign mst_axil.r_valid                   = mst_rvalid_wo;
 assign mst_rready_wi                      = mst_axil.r_ready;
 
 assign slv_araddr_wi = mst_axil.ar_addr;
+
+
+assign slv_arqos_wi = mst_axil.ar_qos;
 
 //-------------------------------------------------------------------------------
 // AXI signal management
@@ -129,13 +142,17 @@ assign slv_araddr_wi = mst_axil.ar_addr;
 // = AR channel = //
 
 assign node_araddr_w  = mst_araddr_wi;
-assign mst_arready_wo = (ar_success_r && |(slv_id_reqst_onehot & node_arready_w) || illegal_addr );
+assign node_arqos_w    = mst_arqos_wi;
+assign mst_arready_wo = (ar_success_r && (slv_id_reqst_onehot & node_arready_w) || illegal_addr );
 assign node_arvalid_w = (ar_success_r && mst_arvalid_wi && !illegal_addr) ? slv_id_reqst_onehot : '0;
+
+
 
 // = R channel = //
 
 assign mst_rdata_wo  = (illegal_addr) ? IC_RDATA_WIDTH'(IC_INVALID_ADDR_RESP) : node_rdata_w[slv_id_resp];
-assign mst_rvalid_wo = (|(node_rvalid_w & slv_id_resp_onehot) || illegal_addr );
+
+assign mst_rvalid_wo = ((node_rvalid_w & slv_id_resp_onehot) || illegal_addr );
 assign node_rready_w = (mst_rready_wi && !illegal_addr) ? slv_id_resp_onehot : '0;
 
 //-------------------------------------------------------------------------------
@@ -146,7 +163,8 @@ generate
 // Check if node connectivity has slave slots.
 // Create master node and connect it to crossbar matrix as per IC_RD_CONNECTIVITY vector
     assign cbar_reqst_data_o   = node_araddr_w;
-
+    assign cbar_reqst_arqos_o  = node_arqos_w;
+    
     for (genvar node_slv_slot_idx = 0; node_slv_slot_idx < NODE_NUM_SLAVE_SLOTS; node_slv_slot_idx++) begin
         localparam ic_slv_slot_idx = get_connectivity_idx(node_slv_slot_idx);
 
@@ -154,7 +172,7 @@ generate
             assign node_arready_w[node_slv_slot_idx] = cbar_reqst_rdy_i[ic_slv_slot_idx];
             assign node_rvalid_w [node_slv_slot_idx] = cbar_resp_val_i [ic_slv_slot_idx];
             assign node_rdata_w[node_slv_slot_idx]   = cbar_resp_data_i[ic_slv_slot_idx];
-
+            
             assign cbar_reqst_val_o[ic_slv_slot_idx] = node_arvalid_w[node_slv_slot_idx];
             assign cbar_resp_rdy_o [ic_slv_slot_idx] = node_rready_w [node_slv_slot_idx];
         end
@@ -169,7 +187,6 @@ always_ff @(posedge clk_i or negedge rstn_i)
 if      (!rstn_i)                         slv_id_reqst_onehot_r <= '0;
 else if (mst_arvalid_wi & mst_arready_wo) slv_id_reqst_onehot_r <= slv_id_reqst_onehot;
 else                                      slv_id_reqst_onehot_r <= slv_id_reqst_onehot_r;
-
 //-------------------------------------------------------------------------------
 // Flags of success transactions
 //-------------------------------------------------------------------------------
@@ -201,8 +218,8 @@ slave_addr_decoder (
 // This module is used, as a converter to binary value
 liteic_priority_cd #(.IN_WIDTH(IC_NUM_SLAVE_SLOTS), .OUT_WIDTH(NODE_SLAVE_ID_WIDTH)) 
 slave_resp_priority_cd (
-    .in     (slv_id_reqst_onehot_r  ),
-    .onehot (slv_id_resp_onehot     ),
-    .out    (slv_id_resp            )
+    .in         (slv_id_reqst_onehot_r  ),
+    .onehot     (slv_id_resp_onehot     ),
+    .out        (slv_id_resp            )
 ); 
 endmodule

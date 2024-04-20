@@ -92,6 +92,10 @@ generate
         assign mnode_axil_if[mst_idx].w_strb   = mst_axil[mst_idx].w_strb   ;
         assign mnode_axil_if[mst_idx].w_valid  = mst_axil[mst_idx].w_valid  ;
         assign mnode_axil_if[mst_idx].b_ready  = mst_axil[mst_idx].b_ready  ;
+        
+        assign mnode_axil_if[mst_idx].ar_qos  = mst_axil[mst_idx].ar_qos    ; 
+        assign mnode_axil_if[mst_idx].aw_qos  = mst_axil[mst_idx].aw_qos    ;
+        
 
         assign mst_axil[mst_idx].ar_ready = mnode_axil_if[mst_idx].ar_ready ;
         assign mst_axil[mst_idx].r_data   = mnode_axil_if[mst_idx].r_data   ;
@@ -101,6 +105,10 @@ generate
         assign mst_axil[mst_idx].w_ready  = mnode_axil_if[mst_idx].w_ready  ;
         assign mst_axil[mst_idx].b_resp   = mnode_axil_if[mst_idx].b_resp   ;
         assign mst_axil[mst_idx].b_valid  = mnode_axil_if[mst_idx].b_valid  ;
+        
+//        assign mst_axil[mst_idx].ar_qos   = mnode_axil_if[mst_idx].ar_qos   ;
+//        assign mst_axil[mst_idx].aw_qos  = mnode_axil_if[mst_idx].aw_qos    ;
+        
     end
 
     for(genvar slv_idx = 0; slv_idx < IC_NUM_SLAVE_SLOTS; slv_idx++) begin
@@ -136,6 +144,8 @@ endgenerate
 logic [IC_ARADDR_WIDTH-1     : 0] rnode_reqst_data [IC_NUM_MASTER_SLOTS];
 logic [IC_RDATA_WIDTH-1      : 0] rnode_resp_data  [IC_NUM_SLAVE_SLOTS ];
 
+logic [3:0] rmnode_reqst_arqos [IC_NUM_MASTER_SLOTS];
+
 // Define read master node request ports of crossbar 
 logic [IC_NUM_SLAVE_SLOTS-1  : 0] rmnode_reqst_rdy_i [IC_NUM_MASTER_SLOTS];
 logic [IC_NUM_SLAVE_SLOTS-1  : 0] rmnode_reqst_val_o [IC_NUM_MASTER_SLOTS];
@@ -160,6 +170,7 @@ generate
             // Connect response read ports
             assign rmnode_resp_val_i[mst_idx][slv_idx]  = rsnode_resp_val_o[slv_idx][mst_idx];
             assign rsnode_resp_rdy_i[slv_idx][mst_idx]  = rmnode_resp_rdy_o[mst_idx][slv_idx];
+            
         end
     end
 
@@ -178,6 +189,7 @@ for(genvar mst_idx = 0; mst_idx < IC_NUM_MASTER_SLOTS; mst_idx++) begin : rd_mst
         .cbar_reqst_data_o (rnode_reqst_data      [mst_idx]),
         .cbar_resp_data_i  (rnode_resp_data                ),
         .cbar_resp_val_i   (rmnode_resp_val_i     [mst_idx]),
+        .cbar_reqst_arqos_o (rmnode_reqst_arqos [mst_idx]),
         .cbar_resp_rdy_o   (rmnode_resp_rdy_o     [mst_idx])
     );
 end
@@ -192,6 +204,7 @@ for(genvar slv_idx = 0; slv_idx < IC_NUM_SLAVE_SLOTS; slv_idx++) begin : rd_slv_
         .cbar_reqst_rdy_o  (rsnode_reqst_rdy_o    [slv_idx]),
         .cbar_resp_rdy_i   (rsnode_resp_rdy_i     [slv_idx]),
         .cbar_resp_val_o   (rsnode_resp_val_o     [slv_idx]),
+        .cbar_reqst_arqos_i(rmnode_reqst_arqos           ),
         .cbar_resp_data_o  (rnode_resp_data       [slv_idx])
     );
 end

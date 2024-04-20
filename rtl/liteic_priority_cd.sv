@@ -1,6 +1,7 @@
 module liteic_priority_cd #(
     parameter IN_WIDTH = 32,
-    parameter OUT_WIDTH = $clog2(IN_WIDTH)
+    parameter OUT_WIDTH = $clog2(IN_WIDTH),
+    parameter IC_NUM_MASTER_SLOTS = 20
 )(
     input  logic [IN_WIDTH-1:0]  in,
     output logic [IN_WIDTH-1:0]  onehot,

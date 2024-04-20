@@ -151,20 +151,21 @@ assign mst_id_reqst_onehot = (!node_busy) ? mst_id_reqst_prior_onehot : mst_id_r
 
 // = AW channel = //
  
-assign slv_awvalid_wo   = ((|(node_awvalid_w)) && (!aw_success_r));
+assign slv_awvalid_wo   = (((node_awvalid_w)) && (!aw_success_r));
 assign node_awready_w = (slv_awready_wi && (!aw_success_r)) ? mst_id_reqst_onehot : '0;
 assign slv_awaddr_wo    = node_awaddr[mst_id_reqst];
 
 // = W channel = //
 
-assign slv_wvalid_wo  = (|(mst_id_reqst_onehot & node_wvalid_w)) && (!w_success_r);
+assign slv_wvalid_wo  = ((mst_id_reqst_onehot & node_wvalid_w)) && (!w_success_r);
 assign node_wready_w  = (slv_wready_wi && (!w_success_r)) ? mst_id_reqst_onehot : '0;
 assign slv_wdata_wo   = node_wdata_w[mst_id_reqst];
 
 // = B channel = //
 
 assign node_bvalid_w = (slv_bvalid_wi) ? mst_id_reqst_prior_onehot_r : '0;
-assign slv_bready_wo = |(mst_id_reqst_prior_onehot_r & node_bready_w);
+//assign slv_bready_wo = |(mst_id_reqst_prior_onehot_r & node_bready_w);
+assign slv_bready_wo = (mst_id_reqst_prior_onehot_r & node_bready_w)? 1:0;
 assign node_bresp_w  = slv_bresp_wi;
 
 //-------------------------------------------------------------------------------
@@ -188,7 +189,8 @@ else                                   mst_id_reqst_prior_r <= mst_id_reqst_prio
 always_ff @(posedge clk_i or negedge rstn_i)
 if      (!rstn_i)                       node_busy <= 'b0;
 else if (slv_bvalid_wi & slv_bready_wo) node_busy <= 'b0;
-else if (|node_awvalid_w              ) node_busy <= 'b1;
+//else if (|node_awvalid_w              ) node_busy <= 'b1;
+else if (node_awvalid_w              ) node_busy <= 'b1;
 else                                    node_busy <= node_busy;
 
 //-------------------------------------------------------------------------------

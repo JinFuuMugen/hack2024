@@ -13,15 +13,22 @@ module liteic_slave_node_read
 
     // node matrix i/o
     input  logic [ IC_ARADDR_WIDTH-1     : 0 ] cbar_reqst_data_i  [ IC_NUM_MASTER_SLOTS ],
+    input  logic [ 3                     : 0 ] cbar_reqst_arqos_i [ IC_NUM_MASTER_SLOTS ],
     input  logic [ IC_NUM_MASTER_SLOTS-1 : 0 ] cbar_reqst_val_i,
     output logic [ IC_NUM_MASTER_SLOTS-1 : 0 ] cbar_reqst_rdy_o,
 
     input  logic [ IC_NUM_MASTER_SLOTS-1 : 0 ] cbar_resp_rdy_i,
     output logic [ IC_NUM_MASTER_SLOTS-1 : 0 ] cbar_resp_val_o,
-    output logic [ IC_RDATA_WIDTH-1      : 0 ] cbar_resp_data_o
+    output logic [ IC_RDATA_WIDTH-1      : 0 ] cbar_resp_data_o,
+    output logic [ 4                     : 0 ] max_index_o,
+    output logic [ 4                     : 0 ] ind_o
 );
 
+logic [4 : 0] max_index;
+logic [4 : 0] ind;
 
+assign max_index_o = max_index;
+assign ind_o       = ind;
 //-------------------------------------------------------------------------------
 // localparams
 //-------------------------------------------------------------------------------
@@ -78,6 +85,8 @@ logic [ IC_ARADDR_WIDTH-1      : 0 ] slv_araddr_wo;
 logic                                slv_arvalid_wo;
 logic                                slv_arready_wi;
 
+logic [3:0]                          node_arqos_w [  NODE_NUM_MASTER_SLOTS ];
+
 logic [ IC_RDATA_WIDTH-1       : 0 ] slv_rdata_wi;
 logic                                slv_rvalid_wi;
 logic                                slv_rready_wo;
@@ -108,6 +117,7 @@ generate
         localparam ic_mst_slot_idx = get_connectivity_idx(node_mst_slot_idx);
 
         assign node_araddr_w[node_mst_slot_idx] = cbar_reqst_data_i[ic_mst_slot_idx];
+        assign node_arqos_w[node_mst_slot_idx] = cbar_reqst_arqos_i[ic_mst_slot_idx];
         assign node_arvalid_w [node_mst_slot_idx] = cbar_reqst_val_i [ic_mst_slot_idx];
         assign node_rready_w  [node_mst_slot_idx] = cbar_resp_rdy_i  [ic_mst_slot_idx];
 
@@ -143,10 +153,19 @@ assign node_rdata_w  = slv_rdata_wi;
 // Save id of master, which sent the reqst
 //-------------------------------------------------------------------------------
 
+
+///
+
+
+
+///
+
 always_ff @(posedge clk_i or negedge rstn_i)
 if      (!rstn_i)                      mst_id_reqst_prior_onehot_r <= '0;
 else if (slv_arvalid_wo && !node_busy) mst_id_reqst_prior_onehot_r <= mst_id_reqst_prior_onehot;
 else                                   mst_id_reqst_prior_onehot_r <= mst_id_reqst_prior_onehot_r;
+
+
 
 always_ff @(posedge clk_i or negedge rstn_i)
 if      (!rstn_i)                      mst_id_reqst_prior_r <= '0;
@@ -174,13 +193,35 @@ else if (slv_rvalid_wi & slv_rready_wo) ar_success_r <= 'b0;
 else                                    ar_success_r <= ar_success_r | ar_success;
 
 
+
+//...............................................................................
+//  CheckPriority
+//...............................................................................
+always_ff @(posedge clk_i or negedge rstn_i) begin
+    if(!rstn_i) begin
+        max_index = 0;
+        ind = 0;
+    end else begin
+        if(ind != max_index) begin
+            if((node_arqos_w[ind] > node_arqos_w[max_index] || cbar_reqst_val_i[max_index] == 0) && cbar_reqst_val_i[ind] == 1) begin
+                max_index = ind;
+            end
+            ind <= (ind + 1)% 20;
+        end else begin
+            ind <= (ind + 1)% 20;
+        end
+    end
+end
+
+
 //-------------------------------------------------------------------------------
 // initializations units
 //-------------------------------------------------------------------------------
 
-liteic_priority_cd #(.IN_WIDTH(NODE_NUM_MASTER_SLOTS), .OUT_WIDTH(NODE_MASTER_ID_WIDTH)) 
+liteic_priority_cd #(.IN_WIDTH(NODE_NUM_MASTER_SLOTS), .OUT_WIDTH(NODE_MASTER_ID_WIDTH), .IC_NUM_MASTER_SLOTS(IC_NUM_MASTER_SLOTS)) 
 master_reqst_priority_cd (
-    .in     (node_arvalid_w           ),
+    //.in     (node_arvalid_w           ),
+    .in     (1 <<    max_index        ),
     .onehot (mst_id_reqst_prior_onehot),
     .out    (mst_id_reqst_prior       )
 ); 
