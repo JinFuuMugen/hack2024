@@ -197,22 +197,50 @@ else                                    ar_success_r <= ar_success_r | ar_succes
 //...............................................................................
 //  CheckPriority
 //...............................................................................
-always_ff @(posedge clk_i or negedge rstn_i) begin
-    if(!rstn_i) begin
-        max_index = 0;
-        ind = 0;
-    end else begin
-        if(ind != max_index) begin
-            if((node_arqos_w[ind] > node_arqos_w[max_index] || cbar_reqst_val_i[max_index] == 0) && cbar_reqst_val_i[ind] == 1) begin
-                max_index = ind;
-            end
-            ind <= (ind + 1)% 20;
-        end else begin
-            ind <= (ind + 1)% 20;
-        end
-    end
+//always_ff @(posedge clk_i or negedge rstn_i) begin
+//    if(!rstn_i) begin
+//        max_index = 0;
+//        ind = 0;
+//    end else begin
+//        if(ind != max_index) begin
+//            if((node_arqos_w[ind] > node_arqos_w[max_index]  || cbar_reqst_val_i[max_index] == 0) && cbar_reqst_val_i[ind] == 1) begin
+//                max_index = ind;
+//            end
+//            ind <= (ind + 1)% 20;
+//        end else begin
+//            ind <= (ind + 1)% 20;
+//        end
+//    end
+//end
+
+logic [31:0]                          node_arqos_shift [  NODE_NUM_MASTER_SLOTS ];
+
+for (genvar j = 0; j < NODE_NUM_MASTER_SLOTS; j = j + 1) begin 
+    assign node_arqos_shift[j] = 1 << cbar_reqst_arqos_i[j];
 end
 
+logic [32-1:0] mask [5-1:0];
+logic [31 : 0] qos_sum;
+logic [19 : 0] tmp_or;
+for (genvar i = 0; i < 32; i = i + 1) begin
+    for(genvar j = 0; j < NODE_NUM_MASTER_SLOTS; j = j + 1) begin
+        assign tmp_or[j] = node_arqos_shift[j][i];
+        assign mask[i][j] = (j >> i) & 1;
+    end
+    assign qos_sum[i] =  |tmp_or;
+end
+
+
+logic [31:0] one_shot_catch;
+
+
+for(genvar i = 0; i < NODE_NUM_MASTER_SLOTS; i = i + 1) begin    
+    assign mst_id_reqst_prior_onehot = (node_arqos_shift[i] == one_shot_catch)? (1 << i) : 0;
+end
+
+for(genvar i = 0; i < NODE_NUM_MASTER_SLOTS; i = i + 1) begin    
+    assign mst_id_reqst_prior[i] = |(one_shot_catch & mask[i]);
+end
 
 //-------------------------------------------------------------------------------
 // initializations units
@@ -221,8 +249,8 @@ end
 liteic_priority_cd #(.IN_WIDTH(NODE_NUM_MASTER_SLOTS), .OUT_WIDTH(NODE_MASTER_ID_WIDTH), .IC_NUM_MASTER_SLOTS(IC_NUM_MASTER_SLOTS)) 
 master_reqst_priority_cd (
     //.in     (node_arvalid_w           ),
-    .in     (1 <<    max_index        ),
-    .onehot (mst_id_reqst_prior_onehot),
-    .out    (mst_id_reqst_prior       )
+    .in     (qos_sum                  ),
+    .onehot (one_shot_catch)//,
+//    .out    (       )
 ); 
 endmodule
