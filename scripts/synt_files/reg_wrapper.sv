@@ -33,7 +33,7 @@ module reg_wrapper
   logic [  AXI_ADDR_WIDTH-1:0 ]  mst_ar_addr_r  [ IC_NUM_MASTER_SLOTS ];
   logic                          mst_ar_valid_r [ IC_NUM_MASTER_SLOTS ];
   logic                          mst_ar_ready_r [ IC_NUM_MASTER_SLOTS ];
-  logic [       QOS_WIDTH-1:0 ]  mst_ar_qos_r   [ IC_NUM_SLAVE_SLOTS  ];
+  logic [       QOS_WIDTH-1:0 ]  mst_ar_qos_r   [ IC_NUM_MASTER_SLOTS ];
 
   // read data channel
   logic [  AXI_DATA_WIDTH-1:0 ]  slv_r_data_r  [ IC_NUM_SLAVE_SLOTS  ];
@@ -53,7 +53,7 @@ module reg_wrapper
   logic [  AXI_ADDR_WIDTH-1:0 ]  mst_aw_addr_r  [ IC_NUM_MASTER_SLOTS ];
   logic                          mst_aw_valid_r [ IC_NUM_MASTER_SLOTS ];
   logic                          mst_aw_ready_r [ IC_NUM_MASTER_SLOTS ];
-  logic [       QOS_WIDTH-1:0 ]  mst_aw_qos_r   [ IC_NUM_SLAVE_SLOTS  ];
+  logic [       QOS_WIDTH-1:0 ]  mst_aw_qos_r   [ IC_NUM_MASTER_SLOTS  ];
 
   // write data channel
   logic [  AXI_DATA_WIDTH-1:0 ]  slv_w_data_r  [ IC_NUM_SLAVE_SLOTS  ];
