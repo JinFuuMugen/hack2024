@@ -145,6 +145,7 @@ logic [IC_ARADDR_WIDTH-1     : 0] rnode_reqst_data [IC_NUM_MASTER_SLOTS];
 logic [IC_RDATA_WIDTH-1      : 0] rnode_resp_data  [IC_NUM_SLAVE_SLOTS ];
 
 logic [3:0] rmnode_reqst_arqos [IC_NUM_MASTER_SLOTS];
+logic [3:0] rmnode_reqst_awqos [IC_NUM_MASTER_SLOTS];
 
 // Define read master node request ports of crossbar 
 logic [IC_NUM_SLAVE_SLOTS-1  : 0] rmnode_reqst_rdy_i [IC_NUM_MASTER_SLOTS];
@@ -277,6 +278,7 @@ for(genvar mst_idx = 0; mst_idx < IC_NUM_MASTER_SLOTS; mst_idx++) begin : wr_mst
         .cbar_aw_reqst_data_o (wnode_aw_reqst_data       [mst_idx]),
         .cbar_resp_data_i     (wnode_resp_data                    ),
         .cbar_resp_val_i      (wmnode_resp_val_i      [mst_idx]   ),
+        .cbar_reqst_awqos_o   (rmnode_reqst_awqos        [mst_idx]),
         .cbar_resp_rdy_o      (wmnode_resp_rdy_o      [mst_idx]   )
     );
 end
@@ -294,6 +296,7 @@ for(genvar slv_idx = 0; slv_idx < IC_NUM_SLAVE_SLOTS; slv_idx++) begin : wr_slv_
         .cbar_aw_reqst_rdy_o  (wsnode_aw_reqst_rdy_o     [slv_idx]),
         .cbar_resp_rdy_i      (wsnode_resp_rdy_i      [slv_idx]   ),
         .cbar_resp_val_o      (wsnode_resp_val_o      [slv_idx]   ),
+        .cbar_reqst_awqos_i   (rmnode_reqst_awqos                 ),
         .cbar_resp_data_o     (wnode_resp_data        [slv_idx]   )
     );
 end

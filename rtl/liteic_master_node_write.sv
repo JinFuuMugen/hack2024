@@ -25,7 +25,8 @@ module liteic_master_node_write
 
     input  logic [ IC_BRESP_WIDTH-1          : 0 ] cbar_resp_data_i [ IC_NUM_SLAVE_SLOTS ],
     input  logic [ IC_NUM_SLAVE_SLOTS-1      : 0 ] cbar_resp_val_i,
-    output logic [ IC_NUM_SLAVE_SLOTS-1      : 0 ] cbar_resp_rdy_o
+    output logic [ IC_NUM_SLAVE_SLOTS-1      : 0 ] cbar_resp_rdy_o,
+    output logic [3:0]                        cbar_reqst_awqos_o
 );
 
 
@@ -120,6 +121,9 @@ logic                                mst_awvalid_wi;
 logic [   IC_AWADDR_WIDTH-1    : 0 ] mst_awaddr_wi;
 logic                                mst_awready_wo;
 
+
+logic [3:0]                         mst_awqos_wi;
+
 // Flags
 logic                                illegal_addr;
 logic [1:0]                          in_st;
@@ -128,7 +132,8 @@ logic                                aw_success;
 logic                                w_success;
 logic                                aw_success_r;
 logic                                w_success_r;
-
+//ARQOS to slave
+logic [ 3 : 0 ] node_awqos_w;
 //-------------------------------------------------------------------------------
 // = Reconnect and combine interfaces
 //-------------------------------------------------------------------------------
@@ -136,6 +141,8 @@ logic                                w_success_r;
 assign mst_awaddr_wi     = mst_axil.aw_addr;
 assign mst_awvalid_wi    = mst_axil.aw_valid;
 assign mst_axil.aw_ready = mst_awready_wo;
+
+assign mst_awqos_wi      =  mst_axil.aw_qos;
 
 assign mst_wdata_wi      = {mst_axil.w_strb, mst_axil.w_data};
 assign mst_wvalid_wi     = mst_axil.w_valid;
@@ -147,6 +154,9 @@ assign mst_bready_wi     = mst_axil.b_ready;
 
 assign slv_awaddr_wi     = mst_axil.aw_addr;
 
+
+assign node_awqos_w           = mst_awqos_wi;
+
 //-------------------------------------------------------------------------------
 // Reconnect crossbar, if nodes has no connection
 //-------------------------------------------------------------------------------
@@ -156,6 +166,7 @@ generate
 // Create master node and connect it to crossbar matrix as per IC_WR_CONNECTIVITY vector
     assign  cbar_w_reqst_data_o   =  node_wdata_w;
     assign cbar_aw_reqst_data_o   = node_awaddr_w;
+    assign cbar_reqst_awqos_o     = node_awqos_w;
 
     for (genvar node_slv_slot_idx = 0; node_slv_slot_idx < NODE_NUM_SLAVE_SLOTS; node_slv_slot_idx++) begin
         localparam ic_slv_slot_idx = get_connectivity_idx(node_slv_slot_idx);
