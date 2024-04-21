@@ -41,8 +41,14 @@ else
 	RUN_OPTS += -voptargs="+acc=npr+tb_liteic_top"
 endif
 
-# Sources
+# TB Sources
 TB_SRCS = $(shell find ../uvm ../tb -name "*.*v")
+
+# VHDL Sources
+RTL_VHDL_PATH = rtl_vhdl.f
+RTL_VHDL_SRCS = $(shell find ../../rtl -name "*.vhd")
+
+# Verilog Sources
 ifeq ($(NETLIST),1)
 	RTL_SRCS = $(shell find ../../tmp/result -name "*.v")
 	RTL_PATH = rtl_netlist.f
@@ -85,9 +91,13 @@ $(OUT)/tb_compile.stamp: $(TB_SRCS) $(OUT)/NETLIST.$(NETLIST) | $(OUT)
 	@touch $@
 
 # RTL compilation
-$(OUT)/rtl_compile.stamp: $(RTL_SRCS) $(OUT)/NETLIST.$(NETLIST) $(RTL_PATH) | $(OUT)
+$(OUT)/rtl_compile.stamp: $(RTL_SRCS) $(RTL_VHDL_SRCS) \
+	$(OUT)/NETLIST.$(NETLIST) $(RTL_PATH) $(RTL_VHDL_PATH) | $(OUT)
 	@echo -n "Compiling RTL (log file at $(OUT)/rtl_compile.log)... "
 	@vlog -64 -sv -f $(RTL_PATH) +nospecify -timescale "1 ns / 1 ps" > $(OUT)/rtl_compile.log
+ifneq ($(RTL_VHDL_SRCS),)
+	@vcom -64 -f $(RTL_VHDL_PATH) >> $(OUT)/rtl_compile.log
+endif
 	@echo "Done"
 	@touch $@
 

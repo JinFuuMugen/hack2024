@@ -542,7 +542,7 @@ class axi4_liteic_test_base extends uvm_test;
                 fork begin
                     fork
                         seqs[i].start(masters[num].m_sequencer); 
-                        seq_timeout();
+                        seq_timeout(num);
                     join_any
                     disable fork;
                 end join_none
@@ -577,14 +577,15 @@ class axi4_liteic_test_base extends uvm_test;
     // Tasks: Timeouts
     //---------------------------------------------------------
 
-    // Sequence timeout
+    // Sequence timeout for ~num~ master
     
-    virtual task seq_timeout();
+    virtual task seq_timeout(int num);
         // We expect at least 1 master
         master_configs[0].wait_for_reset();
         repeat(test_config.seq_timeout_clks)
             master_configs[0].wait_for_clock();
-        `uvm_fatal(get_name(), "Sequence timeout!");
+        `uvm_fatal(get_name(), $sformatf(
+            "Sequence timeout on master[%0d]!", num));
     endtask
 
     // Test timeout
