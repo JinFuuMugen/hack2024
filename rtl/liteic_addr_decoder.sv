@@ -11,10 +11,11 @@ module liteic_addr_decoder
     output logic                       illegal_addr_o  // illegal address flag
 );
 
-for (genvar gi = 0; gi < NUM_REGIONS; gi++) begin : addr_region_range
-    assign rgn_select_o[gi] = ( addr_i >=  REGION_BASE[gi]                    ) &&
-                              ( addr_i <  (REGION_BASE[gi] + REGION_SIZE[gi]) );
-end
+// for (genvar gi = 0; gi < NUM_REGIONS; gi++) begin : addr_region_range
+//     assign rgn_select_o[gi] = ( addr_i >=  REGION_BASE[gi]                    ) &&
+//                               ( addr_i <  (REGION_BASE[gi] + REGION_SIZE[gi]) );
+// end
+assign rgn_select_o = 1 << addr_i[23:20];
 
 assign illegal_addr_o = ~|( rgn_select_o );
 

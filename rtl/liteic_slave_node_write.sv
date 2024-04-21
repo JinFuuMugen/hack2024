@@ -234,19 +234,19 @@ else                                    w_success_r <= w_success_r | w_success;
 //    end
 //end
 
-logic [31:0]                          node_awqos_shift [  NODE_NUM_MASTER_SLOTS ];
+logic [15:0]                          node_awqos_shift [  NODE_NUM_MASTER_SLOTS ];
 
 for (genvar j = 0; j < NODE_NUM_MASTER_SLOTS; j = j + 1) begin 
     assign node_awqos_shift[j] = cbar_aw_reqst_val_i[j] << cbar_reqst_awqos_i[j];
 end
 
 logic [20-1:0] mask [5-1:0];
-logic [31 : 0] qos_sum;
-logic [31 : 0] tmp_or;
+logic [15 : 0] qos_sum;
+logic [15 : 0] tmp_or;
 logic tmp_or_bit;
 
 always_comb begin
-    for (int i = 0; i < 32; i++) begin
+    for (int i = 0; i < 16; i++) begin
         tmp_or_bit = 1'b0;
         for (int j = 0; j < NODE_NUM_MASTER_SLOTS; j++) begin
             tmp_or_bit = tmp_or_bit | node_awqos_shift[j][i];
@@ -295,7 +295,7 @@ end
 // initializations units
 //-------------------------------------------------------------------------------
 
-liteic_priority_cd #(.IN_WIDTH(NODE_NUM_MASTER_SLOTS), .OUT_WIDTH(NODE_MASTER_ID_WIDTH), .IC_NUM_MASTER_SLOTS(IC_NUM_MASTER_SLOTS))  
+liteic_priority_cd #(.IN_WIDTH(16), .OUT_WIDTH(16), .IC_NUM_MASTER_SLOTS(IC_NUM_MASTER_SLOTS))  
 master_aw_reqst_priority_cd (
     .in     (qos_sum            ) ,
     .onehot (one_shot_catch ) //,

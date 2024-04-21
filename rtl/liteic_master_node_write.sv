@@ -252,12 +252,22 @@ slave_addr_decoder (
     .illegal_addr_o   (illegal_addr              )
 );
 
-// This module is used, as a converter to binary value
-liteic_priority_cd #(.IN_WIDTH(IC_NUM_SLAVE_SLOTS), .OUT_WIDTH(NODE_SLAVE_ID_WIDTH)) 
-slave_resp_priority_cd (
-    .in     (slv_id_reqst_decod_onehot_r  ),
-    .onehot (slv_id_resp_onehot           ),
-    .out    (slv_id_resp                  )
-); 
+    logic [IC_NUM_SLAVE_SLOTS-1:0] mask [NODE_SLAVE_ID_WIDTH-1:0];
+    
+    for (genvar j = 0; j < NODE_SLAVE_ID_WIDTH; j = j + 1) begin : binary_out_gen
+        for (genvar i = 0; i < IC_NUM_SLAVE_SLOTS; i = i + 1) 
+            assign mask[j][i] = (i >> j) & 1;
+        assign slv_id_resp[j] = |(slv_id_reqst_decod_onehot_r & mask[j]);
+    end
+    
+    assign slv_id_resp_onehot = slv_id_reqst_decod_onehot_r;
+
+//// This module is used, as a converter to binary value
+//liteic_priority_cd #(.IN_WIDTH(IC_NUM_SLAVE_SLOTS), .OUT_WIDTH(NODE_SLAVE_ID_WIDTH)) 
+//slave_resp_priority_cd (
+//    .in     (slv_id_reqst_decod_onehot_r  ),
+//    .onehot (slv_id_resp_onehot           ),
+//    .out    (slv_id_resp                  )
+//); 
 
 endmodule
